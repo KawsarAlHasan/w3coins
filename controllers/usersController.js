@@ -70,7 +70,7 @@ exports.usersSignup = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const data = await db.query(
+    const [data] = await db.query(
       `INSERT INTO users ( name, email, password, refercode, signupmethod ) VALUES (?, ?, ?, ?, ?)`,
       [name, email, hashedPassword, refercode, signupmethod]
     );
@@ -82,9 +82,19 @@ exports.usersSignup = async (req, res) => {
       });
     }
 
+    const [results] = await db.query(`SELECT * FROM users WHERE id=?`, [
+      data.insertId,
+    ]);
+    const users = results[0];
+    const token = generateUsersToken(users);
+
     res.status(200).send({
       success: true,
       message: "User created successfully",
+      data: {
+        user: users,
+        token,
+      },
     });
   } catch (error) {
     res.status(500).send({

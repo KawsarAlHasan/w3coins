@@ -27,15 +27,14 @@ mySqlPool
   .query("SELECT 1")
   .then(() => {
     console.log("MYSQL DB Connected");
-
-    // listen
-    app.listen(port, () => {
-      console.log(`W3Coins Server is running on port ${port}`);
-    });
   })
   .catch((error) => {
     console.log(error);
   });
+
+app.listen(port, () => {
+  console.log(`W3Coins Server is running on port ${port}`);
+});
 
 app.get("/", (req, res) => {
   res.status(200).send("W3Coins Server is working");
