@@ -154,12 +154,8 @@ exports.usersLogin = async (req, res) => {
 // get me User
 exports.getMeUsers = async (req, res) => {
   try {
-    const decodeduser = req?.decodedusers.email;
-    const [data] = await db.query(`SELECT * FROM users WHERE email=?`, [
-      decodeduser,
-    ]);
-
-    res.status(200).json(data[0]);
+    const decodeduser = req.decodedUser;
+    res.status(200).json(decodeduser);
   } catch (error) {
     res.status(400).json({
       success: false,
@@ -210,14 +206,7 @@ exports.updateUserPassword = async (req, res) => {
         message: "Old Password and New Password is requied in body",
       });
     }
-
-    const decodeduser = req?.decodedusers?.email;
-    const [data] = await db.query(
-      `SELECT password FROM users WHERE email=? AND id=?`,
-      [decodeduser, userID]
-    );
-
-    const checkPassword = data[0]?.password;
+    const checkPassword = req.decodedUser?.password;
 
     if (!checkPassword) {
       return res.status(404).send({

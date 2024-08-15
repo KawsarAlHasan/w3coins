@@ -18,15 +18,15 @@ module.exports = async (req, res, next) => {
         return res.status(403).send({ message: "Forbidden access" });
       }
 
-      const userEmail = decoded.email;
-      const [result] = await db.query(`SELECT * FROM users WHERE email=?`, [
-        userEmail,
+      const userID = decoded.id;
+      const [result] = await db.query(`SELECT * FROM users WHERE id=?`, [
+        userID,
       ]);
       const user = result[0];
       if (!user) {
         return res.status(404).json({ error: "User not found." });
       }
-      req.decodeduser = user;
+      req.decodedUser = user;
 
       next();
     });

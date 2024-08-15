@@ -72,7 +72,7 @@ exports.createWallet = async (req, res) => {
       });
     }
 
-    const { id } = req.decodeduser;
+    const { id } = req.decodedUser;
     const [data] = await db.query(
       `INSERT INTO wallate ( w3coin, user_id ) VALUES ( ?, ? )`,
       [w3coin, id]
