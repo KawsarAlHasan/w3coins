@@ -29,21 +29,14 @@ exports.getAllwallet = async (req, res) => {
   }
 };
 
-// get single Wallet by id
-exports.getSingleWallet = async (req, res) => {
+// get My Wallet
+exports.getMyWallet = async (req, res) => {
   try {
-    const walletID = req.params.id;
-    if (!walletID) {
-      return res.status(404).send({
-        success: false,
-        message: "User ID is required in params",
-      });
-    }
+    const decodeduserID = req.decodedUser.id;
 
-    const [data] = await db.query(
-      "SELECT w.id, w.user_id, u.name, u.email, u.account_status, u.kyc_status, w.w3coin FROM wallate w INNER JOIN users u ON w.user_id = u.id WHERE w.id=?",
-      [walletID]
-    );
+    const [data] = await db.query("SELECT * FROM wallate WHERE user_id=?", [
+      decodeduserID,
+    ]);
     if (!data || data.length === 0) {
       return res.status(400).send({
         success: true,
@@ -61,42 +54,42 @@ exports.getSingleWallet = async (req, res) => {
 };
 
 // create wallet
-exports.createWallet = async (req, res) => {
-  try {
-    const { w3coin } = req.body;
+// exports.createWallet = async (req, res) => {
+//   try {
+//     const { w3coin } = req.body;
 
-    if (!w3coin) {
-      return res.status(500).send({
-        success: false,
-        message: "Please provide w3coin fields",
-      });
-    }
+//     if (!w3coin) {
+//       return res.status(500).send({
+//         success: false,
+//         message: "Please provide w3coin fields",
+//       });
+//     }
 
-    const { id } = req.decodedUser;
-    const [data] = await db.query(
-      `INSERT INTO wallate ( w3coin, user_id ) VALUES ( ?, ? )`,
-      [w3coin, id]
-    );
+//     const { id } = req.decodedUser;
+//     const [data] = await db.query(
+//       `INSERT INTO wallate ( w3coin, user_id ) VALUES ( ?, ? )`,
+//       [w3coin, id]
+//     );
 
-    if (!data) {
-      return res.status(404).send({
-        success: false,
-        message: "Error in INSERT QUERY",
-      });
-    }
+//     if (!data) {
+//       return res.status(404).send({
+//         success: false,
+//         message: "Error in INSERT QUERY",
+//       });
+//     }
 
-    res.status(200).send({
-      success: true,
-      message: "w3coins created successfully",
-    });
-  } catch (error) {
-    res.status(500).send({
-      success: false,
-      message: "Error in Create w3 coins API",
-      error: error.message,
-    });
-  }
-};
+//     res.status(200).send({
+//       success: true,
+//       message: "w3coins created successfully",
+//     });
+//   } catch (error) {
+//     res.status(500).send({
+//       success: false,
+//       message: "Error in Create w3 coins API",
+//       error: error.message,
+//     });
+//   }
+// };
 
 // update Wallet
 exports.miningWallet = async (req, res) => {
@@ -126,7 +119,7 @@ exports.miningWallet = async (req, res) => {
 
     const [updateData] = await db.query(
       `UPDATE wallate SET w3coin=?  WHERE user_id=?`,
-      [totalW3Coin, decodeduserID]
+      [w3coin, decodeduserID]
     );
     if (!updateData) {
       return res.status(500).send({

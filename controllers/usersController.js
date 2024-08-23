@@ -82,6 +82,19 @@ exports.usersSignup = async (req, res) => {
       });
     }
 
+    const w3coin = 0;
+    const [w3coinData] = await db.query(
+      `INSERT INTO wallate ( w3coin, user_id ) VALUES ( ?, ? )`,
+      [w3coin, data.insertId]
+    );
+
+    if (!w3coinData) {
+      return res.status(404).send({
+        success: false,
+        message: "Error in INSERT QUERY",
+      });
+    }
+
     const [results] = await db.query(`SELECT * FROM users WHERE id=?`, [
       data.insertId,
     ]);
