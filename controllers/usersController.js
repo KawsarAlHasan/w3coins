@@ -289,19 +289,23 @@ exports.updateUser = async (req, res) => {
     const update_profile_image = req.files["profile_image"]
       ? req.files["profile_image"][0].path
       : profile_image;
+
     const update_nid_image = req.files["nid_image"]
       ? req.files["nid_image"][0].path
       : nid_image;
-    const data = await db.query(
-      `UPDATE users SET name=?, phone=?, profile_image=?, nid_image=?  WHERE id =?`,
-      [name, phone, update_profile_image, update_nid_image, userID]
-    );
-    if (!data) {
-      return res.status(500).send({
-        success: false,
-        message: "Error in update User ",
-      });
-    }
+
+    console.log(req.files);
+
+    // const data = await db.query(
+    //   `UPDATE users SET name=?, phone=?, profile_image=?, nid_image=?  WHERE id =?`,
+    //   [name, phone, update_profile_image, update_nid_image, userID]
+    // );
+    // if (!data) {
+    //   return res.status(500).send({
+    //     success: false,
+    //     message: "Error in update User ",
+    //   });
+    // }
     res.status(200).send({
       success: true,
       message: "User updated successfully",
