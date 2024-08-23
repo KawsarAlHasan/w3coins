@@ -34,9 +34,10 @@ exports.getMyWallet = async (req, res) => {
   try {
     const decodeduserID = req.decodedUser.id;
 
-    const [data] = await db.query("SELECT * FROM wallate WHERE user_id=?", [
-      decodeduserID,
-    ]);
+    const [data] = await db.query(
+      "SELECT w.id, w.user_id, u.name, u.email, u.account_status, u.kyc_status, w.w3coin FROM wallate w INNER JOIN users u ON w.user_id = u.id WHERE w.user_id=?",
+      [decodeduserID]
+    );
     if (!data || data.length === 0) {
       return res.status(400).send({
         success: true,
