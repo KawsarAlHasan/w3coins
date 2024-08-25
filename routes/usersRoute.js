@@ -21,7 +21,7 @@ router.get("/:id", getSingleUser);
 router.post("/signup", usersSignup);
 router.post("/login", usersLogin);
 router.put(
-  "/update/:id",
+  "/update",
   uploadImage.fields([
     { name: "profile_image", maxCount: 1 },
     { name: "nid_image", maxCount: 1 },

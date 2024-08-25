@@ -266,13 +266,8 @@ exports.updateUserPassword = async (req, res) => {
 // update user
 exports.updateUser = async (req, res) => {
   try {
-    const userID = req.params.id;
-    if (!userID) {
-      return res.status(404).send({
-        success: false,
-        message: "User ID is requied in params",
-      });
-    }
+    const userID = req.decodedUser.id;
+
     const { name, phone } = req.body;
     if (!name || !phone) {
       return res.status(404).send({
@@ -294,18 +289,16 @@ exports.updateUser = async (req, res) => {
       ? req.files["nid_image"][0].path
       : nid_image;
 
-    console.log(req.files);
-
-    // const data = await db.query(
-    //   `UPDATE users SET name=?, phone=?, profile_image=?, nid_image=?  WHERE id =?`,
-    //   [name, phone, update_profile_image, update_nid_image, userID]
-    // );
-    // if (!data) {
-    //   return res.status(500).send({
-    //     success: false,
-    //     message: "Error in update User ",
-    //   });
-    // }
+    const [data] = await db.query(
+      `UPDATE users SET name=?, phone=?, profile_image=?, nid_image=?  WHERE id =?`,
+      [name, phone, update_profile_image, update_nid_image, userID]
+    );
+    if (!data) {
+      return res.status(500).send({
+        success: false,
+        message: "Error in update User ",
+      });
+    }
     res.status(200).send({
       success: true,
       message: "User updated successfully",
