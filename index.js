@@ -18,6 +18,16 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
 
+// ssh root@82.112.238.74
+// W3CoinHosting@2024
+
+// mysql -u root -p
+// w3@passWord
+
+// CREATE USER 'w3kawsar'@'%' IDENTIFIED BY 'w3Kawsar@';
+// GRANT ALL PRIVILEGES ON *.* TO 'w3kawsar'@'%' WITH GRANT OPTION;
+// FLUSH PRIVILEGES;
+
 app.use("/public", express.static(path.join(__dirname, "public")));
 
 app.use("/api/v1/users", require("./routes/usersRoute"));

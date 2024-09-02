@@ -5,21 +5,42 @@ const { generateUsersToken } = require("../config/usersToken");
 // get all Users
 exports.getAllUsers = async (req, res) => {
   try {
-    const [data] = await db.query("SELECT * FROM users");
+    let { page, limit } = req.query;
+
+    page = parseInt(page) || 1; // Default page is 1
+    limit = parseInt(limit) || 20; // Default limit is 10
+    const offset = (page - 1) * limit; // Calculate offset for pagination
+
+    const [data] = await db.query("SELECT * FROM users LIMIT ? OFFSET ?", [
+      limit,
+      offset,
+    ]);
+
     if (!data || data.length === 0) {
       return res.status(200).send({
         success: true,
-        message: "No All Users found",
-        data: data[0],
+        message: "No users found",
+        data: [],
       });
     }
+
+    // Get total count of users for pagination info
+    const [totalUsersCount] = await db.query(
+      "SELECT COUNT(*) as count FROM users"
+    );
+    const totalUsers = totalUsersCount[0].count;
+
+    // Send response with users data and pagination info
     res.status(200).send({
       success: true,
       message: "All Users",
-      totalUsers: data.length,
+      totalUsers: totalUsers,
+      currentPage: page,
+      totalPages: Math.ceil(totalUsers / limit),
       data: data,
     });
   } catch (error) {
+    // Error handling
     res.status(500).send({
       success: false,
       message: "Error in Get All Users",
