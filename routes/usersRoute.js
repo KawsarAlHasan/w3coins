@@ -9,6 +9,7 @@ const {
   getSingleUser,
   updateUserPassword,
   updateUser,
+  verifyStatusUpdate,
 } = require("../controllers/usersController");
 const verifyUsers = require("../middleware/verifyUsers");
 const uploadImage = require("../middleware/imagesUploader");
@@ -32,5 +33,6 @@ router.put(
 router.put("/update-password/:id", verifyUsers, updateUserPassword);
 
 router.delete("/delete/:id", verifyUsers, deleteUser);
+router.put("/update-verify-status/:id", verifyStatusUpdate);
 
 module.exports = router;

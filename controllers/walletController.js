@@ -54,43 +54,60 @@ exports.getMyWallet = async (req, res) => {
   }
 };
 
-// create wallet
-// exports.createWallet = async (req, res) => {
-//   try {
-//     const { w3coin } = req.body;
+// get today mining
+exports.getTodayMining = async (req, res) => {
+  try {
+    const decodeduserID = req.decodedUser.id;
 
-//     if (!w3coin) {
-//       return res.status(500).send({
-//         success: false,
-//         message: "Please provide w3coin fields",
-//       });
-//     }
+    const today = new Date();
+    const startOfToday = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+    const endOfToday = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() + 1
+    );
 
-//     const { id } = req.decodedUser;
-//     const [data] = await db.query(
-//       `INSERT INTO wallate ( w3coin, user_id ) VALUES ( ?, ? )`,
-//       [w3coin, id]
-//     );
+    const [data] = await db.query(
+      `SELECT * FROM today_mining WHERE user_id = ? AND start_time >= ? AND start_time < ?`,
+      [decodeduserID, startOfToday.toISOString(), endOfToday.toISOString()]
+    );
 
-//     if (!data) {
-//       return res.status(404).send({
-//         success: false,
-//         message: "Error in INSERT QUERY",
-//       });
-//     }
+    if (!data || data.length === 0) {
+      return res.status(400).send({
+        success: false,
+        message: "Your today mining is null",
+      });
+    }
 
-//     res.status(200).send({
-//       success: true,
-//       message: "w3coins created successfully",
-//     });
-//   } catch (error) {
-//     res.status(500).send({
-//       success: false,
-//       message: "Error in Create w3 coins API",
-//       error: error.message,
-//     });
-//   }
-// };
+    const totalMinutes = data.reduce(
+      (acc, entry) => acc + parseFloat(entry.total_minite),
+      0
+    );
+
+    const totalMining = data.reduce(
+      (acc, entry) => acc + parseFloat(entry.w3coin),
+      0
+    );
+
+    res.status(200).send({
+      success: true,
+      message: "Get today mining successfully",
+      totalMining: totalMining,
+      totalMinutes: totalMinutes,
+      data: data,
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: "Error in get today mining",
+      error: error.message,
+    });
+  }
+};
 
 // update Wallet
 exports.miningWallet = async (req, res) => {
@@ -108,7 +125,7 @@ exports.miningWallet = async (req, res) => {
     }
     const preCoin = data[0].w3coin;
 
-    const { w3coin } = req.body;
+    const { w3coin, start_time, end_time } = req.body;
     if (!w3coin) {
       return res.status(500).send({
         success: false,
@@ -120,7 +137,7 @@ exports.miningWallet = async (req, res) => {
 
     const [updateData] = await db.query(
       `UPDATE wallate SET w3coin=?  WHERE user_id=?`,
-      [w3coin, decodeduserID]
+      [totalW3Coin, decodeduserID]
     );
     if (!updateData) {
       return res.status(500).send({
@@ -128,6 +145,26 @@ exports.miningWallet = async (req, res) => {
         message: "Error in update w3coin",
       });
     }
+
+    const startDate = new Date(start_time);
+    const endDate = new Date(end_time);
+
+    const diffInMs = endDate - startDate;
+
+    const total_minite = diffInMs / (1000 * 60);
+
+    const [todayMaining] = await db.query(
+      `INSERT INTO today_mining (user_id, w3coin, start_time, end_time, total_minite ) VALUES (?, ?, ?, ?, ?)`,
+      [decodeduserID, w3coin, start_time, end_time, total_minite]
+    );
+
+    if (!todayMaining) {
+      return res.status(500).send({
+        success: false,
+        message: "Error in update w3coin",
+      });
+    }
+
     res.status(200).send({
       success: true,
       message: "w3coin updated successfully",

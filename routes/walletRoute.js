@@ -4,6 +4,7 @@ const {
   deleteWallet,
   miningWallet,
   getMyWallet,
+  getTodayMining,
 } = require("../controllers/walletController");
 const verifyUsers = require("../middleware/verifyUsers");
 
@@ -11,7 +12,7 @@ const router = express.Router();
 
 router.get("/all", getAllwallet);
 router.get("/my-wallet", verifyUsers, getMyWallet);
-// router.post("/create", verifyUsers, createWallet);
+router.get("/today-mining", verifyUsers, getTodayMining);
 router.put("/mining", verifyUsers, miningWallet);
 router.delete("/delete/:id", verifyUsers, deleteWallet);
 

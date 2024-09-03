@@ -332,3 +332,45 @@ exports.updateUser = async (req, res) => {
     });
   }
 };
+
+// verify status
+exports.verifyStatusUpdate = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    if (!userId) {
+      return res.status(404).send({
+        success: false,
+        message: "User ID is required in params",
+      });
+    }
+
+    const { verify_status } = req.body;
+    if (!verify_status) {
+      return res.status(404).send({
+        success: false,
+        message: "verify_status is requied in body",
+      });
+    }
+
+    const [data] = await db.query(
+      `UPDATE users SET verify_status=?  WHERE id =?`,
+      [verify_status, userId]
+    );
+    if (!data) {
+      return res.status(500).send({
+        success: false,
+        message: "Error in update verify_status ",
+      });
+    }
+    res.status(200).send({
+      success: true,
+      message: "verify_status updated successfully",
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: "Error in Update verify_status ",
+      error: error.message,
+    });
+  }
+};
