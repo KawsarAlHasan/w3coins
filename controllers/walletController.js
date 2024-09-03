@@ -44,7 +44,16 @@ exports.getMyWallet = async (req, res) => {
         message: "No Wallet found",
       });
     }
-    res.status(200).send(data[0]);
+
+    const [miningList] = await db.query(
+      `SELECT * FROM today_mining WHERE user_id = ?`,
+      [decodeduserID]
+    );
+
+    res.status(200).send({
+      data: data[0],
+      miningList,
+    });
   } catch (error) {
     res.status(500).send({
       success: false,
