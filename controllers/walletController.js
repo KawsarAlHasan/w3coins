@@ -69,20 +69,12 @@ exports.getTodayMining = async (req, res) => {
     const decodeduserID = req.decodedUser.id;
 
     const today = new Date();
-    const startOfToday = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
-    );
-    const endOfToday = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate() + 1
-    );
+    const isoString = today.toISOString();
+    const date = isoString.slice(0, 10);
 
     const [data] = await db.query(
-      `SELECT * FROM today_mining WHERE user_id = ? AND start_time >= ? AND start_time < ?`,
-      [decodeduserID, startOfToday.toISOString(), endOfToday.toISOString()]
+      `SELECT * FROM today_mining WHERE user_id = ? AND date=?`,
+      [decodeduserID, date]
     );
 
     if (!data || data.length === 0) {
@@ -92,22 +84,10 @@ exports.getTodayMining = async (req, res) => {
       });
     }
 
-    const totalMinutes = data.reduce(
-      (acc, entry) => acc + parseFloat(entry.total_minite),
-      0
-    );
-
-    const totalMining = data.reduce(
-      (acc, entry) => acc + parseFloat(entry.w3coin),
-      0
-    );
-
     res.status(200).send({
       success: true,
       message: "Get today mining successfully",
-      totalMining: totalMining,
-      totalMinutes: totalMinutes,
-      data: data,
+      data: data[0],
     });
   } catch (error) {
     res.status(500).send({
@@ -123,65 +103,90 @@ exports.miningWallet = async (req, res) => {
   try {
     const decodeduserID = req.decodedUser.id;
 
-    const [data] = await db.query(`SELECT * FROM wallate WHERE user_id=? `, [
+    const [data] = await db.query(`SELECT * FROM wallate WHERE user_id=?`, [
       decodeduserID,
     ]);
     if (!data || data.length === 0) {
       return res.status(400).send({
         success: false,
-        message: "Your wallate null",
+        message: "Your wallet is null",
       });
     }
     const preCoin = data[0].w3coin;
 
-    const { w3coin, start_time, end_time } = req.body;
-    if (!w3coin) {
+    const { w3coin, total_minite } = req.body;
+    if (!w3coin || !total_minite) {
       return res.status(500).send({
         success: false,
-        message: "W3Coins is requied in body",
+        message: "W3Coins & total_minite are required in the body",
       });
     }
 
     const totalW3Coin = preCoin + parseFloat(w3coin);
 
     const [updateData] = await db.query(
-      `UPDATE wallate SET w3coin=?  WHERE user_id=?`,
+      `UPDATE wallate SET w3coin=? WHERE user_id=?`,
       [totalW3Coin, decodeduserID]
     );
     if (!updateData) {
       return res.status(500).send({
         success: false,
-        message: "Error in update w3coin",
+        message: "Error in updating w3coin",
       });
     }
 
-    const startDate = new Date(start_time);
-    const endDate = new Date(end_time);
+    const today = new Date();
+    const isoString = today.toISOString();
+    const date = isoString.slice(0, 10);
 
-    const diffInMs = endDate - startDate;
-
-    const total_minite = diffInMs / (1000 * 60);
-
-    const [todayMaining] = await db.query(
-      `INSERT INTO today_mining (user_id, w3coin, start_time, end_time, total_minite ) VALUES (?, ?, ?, ?, ?)`,
-      [decodeduserID, w3coin, start_time, end_time, total_minite]
+    // Check if today's mining data already exists
+    const [existingMiningData] = await db.query(
+      `SELECT * FROM today_mining WHERE user_id=? AND date=?`,
+      [decodeduserID, date]
     );
 
-    if (!todayMaining) {
-      return res.status(500).send({
-        success: false,
-        message: "Error in update w3coin",
-      });
+    if (existingMiningData && existingMiningData.length > 0) {
+      // If data exists for today, update the existing record
+      const newW3Coin =
+        parseFloat(existingMiningData[0].w3coin) + parseFloat(w3coin);
+      const newTotalMinite =
+        parseFloat(existingMiningData[0].total_minite) +
+        parseFloat(total_minite);
+
+      const [updateMiningData] = await db.query(
+        `UPDATE today_mining SET w3coin=?, total_minite=? WHERE user_id=? AND date=?`,
+        [newW3Coin, newTotalMinite, decodeduserID, date]
+      );
+
+      if (!updateMiningData) {
+        return res.status(500).send({
+          success: false,
+          message: "Error in updating today's mining data",
+        });
+      }
+    } else {
+      // If no data exists for today, insert a new record
+      const [todayMaining] = await db.query(
+        `INSERT INTO today_mining (user_id, w3coin, date, total_minite) VALUES (?, ?, ?, ?)`,
+        [decodeduserID, w3coin, date, total_minite]
+      );
+
+      if (!todayMaining) {
+        return res.status(500).send({
+          success: false,
+          message: "Error in inserting today's mining data",
+        });
+      }
     }
 
     res.status(200).send({
       success: true,
-      message: "w3coin updated successfully",
+      message: "W3Coin updated successfully",
     });
   } catch (error) {
     res.status(500).send({
       success: false,
-      message: "Error in Update w3coin",
+      message: "Error in updating W3Coin",
       error: error.message,
     });
   }
