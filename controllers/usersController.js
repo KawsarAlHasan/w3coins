@@ -3,7 +3,6 @@ const bcrypt = require("bcrypt");
 const { generateUsersToken } = require("../config/usersToken");
 
 // get all Users
-// get all Users with search functionality
 exports.getAllUsers = async (req, res) => {
   try {
     let { page, limit, name, email, id } = req.query;
