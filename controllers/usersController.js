@@ -3,18 +3,42 @@ const bcrypt = require("bcrypt");
 const { generateUsersToken } = require("../config/usersToken");
 
 // get all Users
+// get all Users with search functionality
 exports.getAllUsers = async (req, res) => {
   try {
-    let { page, limit } = req.query;
+    let { page, limit, name, email, id } = req.query;
 
+    // Default pagination values
     page = parseInt(page) || 1; // Default page is 1
-    limit = parseInt(limit) || 20; // Default limit is 10
+    limit = parseInt(limit) || 20; // Default limit is 20
     const offset = (page - 1) * limit; // Calculate offset for pagination
 
-    const [data] = await db.query("SELECT * FROM users LIMIT ? OFFSET ?", [
-      limit,
-      offset,
-    ]);
+    // Initialize SQL query and parameters array
+    let sqlQuery = "SELECT * FROM users WHERE 1=1"; // 1=1 makes appending conditions easier
+    const queryParams = [];
+
+    // Add filters for name, email, and id if provided
+    if (name) {
+      sqlQuery += " AND name LIKE ?";
+      queryParams.push(`%${name}%`); // Using LIKE for partial match
+    }
+
+    if (email) {
+      sqlQuery += " AND email LIKE ?";
+      queryParams.push(`%${email}%`);
+    }
+
+    if (id) {
+      sqlQuery += " AND id = ?";
+      queryParams.push(id);
+    }
+
+    // Add pagination to the query
+    sqlQuery += " LIMIT ? OFFSET ?";
+    queryParams.push(limit, offset);
+
+    // Execute the query with filters and pagination
+    const [data] = await db.query(sqlQuery, queryParams);
 
     if (!data || data.length === 0) {
       return res.status(200).send({
@@ -24,10 +48,27 @@ exports.getAllUsers = async (req, res) => {
       });
     }
 
-    // Get total count of users for pagination info
-    const [totalUsersCount] = await db.query(
-      "SELECT COUNT(*) as count FROM users"
-    );
+    // Get total count of users for pagination info (with the same filters)
+    let countQuery = "SELECT COUNT(*) as count FROM users WHERE 1=1";
+    const countParams = [];
+
+    // Add the same filters for total count query
+    if (name) {
+      countQuery += " AND name LIKE ?";
+      countParams.push(`%${name}%`);
+    }
+
+    if (email) {
+      countQuery += " AND email LIKE ?";
+      countParams.push(`%${email}%`);
+    }
+
+    if (id) {
+      countQuery += " AND id = ?";
+      countParams.push(id);
+    }
+
+    const [totalUsersCount] = await db.query(countQuery, countParams);
     const totalUsers = totalUsersCount[0].count;
 
     // Send response with users data and pagination info

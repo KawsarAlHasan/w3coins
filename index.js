@@ -33,6 +33,7 @@ app.use("/public", express.static(path.join(__dirname, "public")));
 app.use("/api/v1/users", require("./routes/usersRoute"));
 app.use("/api/v1/admin", require("./routes/adminRoute"));
 app.use("/api/v1/wallet", require("./routes/walletRoute"));
+app.use("/api/v1/dashboard", require("./routes/dashbordRoute"));
 
 const port = process.env.PORT || 5000;
 
