@@ -18,7 +18,6 @@ const router = express.Router();
 
 router.get("/all", getAllUsers); //all users for admin
 router.get("/me", verifyUsers, getMeUsers);
-router.get("/:id", getSingleUser);
 router.post("/signup", usersSignup);
 router.post("/login", usersLogin);
 router.put(
@@ -34,5 +33,6 @@ router.put("/update-password/:id", verifyUsers, updateUserPassword);
 
 router.delete("/delete/:id", verifyUsers, deleteUser);
 router.put("/update-verify-status/:id", verifyStatusUpdate);
+router.get("/:id", getSingleUser);
 
 module.exports = router;

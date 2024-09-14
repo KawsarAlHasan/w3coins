@@ -1,5 +1,6 @@
 const db = require("../config/db");
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 const { generateUsersToken } = require("../config/usersToken");
 
 // get all Users
@@ -122,55 +123,169 @@ exports.usersSignup = async (req, res) => {
   try {
     const { name, email, password, refercode, signupmethod } = req.body;
 
-    if (!name || !email || !password || !refercode || !signupmethod) {
-      return res.status(500).send({
+    // Check input fields
+    if (!name || !email || !password || !signupmethod) {
+      return res.status(400).send({
         success: false,
-        message: "Please provide all fields",
+        message: "Please provide all required fields",
       });
     }
 
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid email format",
+      });
+    }
+
+    // Password length check
+    if (password.length < 6) {
+      return res.status(400).send({
+        success: false,
+        message: "Password should be at least 6 characters long",
+      });
+    }
+
+    // Hashing password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Generate unique refer code
+    async function generateUniqueReferCode(length, batchSize = 5) {
+      const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+      // Helper function to generate a single random code
+      function generateRandomCode(length) {
+        let result = "";
+        for (let i = 0; i < length; i++) {
+          const randomIndex = Math.floor(Math.random() * characters.length);
+          result += characters[randomIndex];
+        }
+        return result;
+      }
+
+      let uniqueCode = null;
+
+      while (!uniqueCode) {
+        // Step 1: Generate a batch of random codes
+        const codesBatch = [];
+        for (let i = 0; i < batchSize; i++) {
+          codesBatch.push(generateRandomCode(length));
+        }
+
+        // Step 2: Check these codes against the database
+        const placeholders = codesBatch.map(() => "?").join(","); // Create placeholders (?, ?, ?, ?)
+        const [existingCodes] = await db.query(
+          `SELECT own_refercode FROM users WHERE own_refercode IN (${placeholders})`,
+          codesBatch
+        );
+
+        // Step 3: Filter out codes that already exist in the database
+        const existingCodeSet = new Set(
+          existingCodes.map((row) => row.own_refercode)
+        );
+
+        // Step 4: Find the first code that doesn't exist in the database
+        uniqueCode = codesBatch.find((code) => !existingCodeSet.has(code));
+      }
+
+      return uniqueCode;
+    }
+
+    // Generate unique refer code (if not provided)
+    const ownReferCode = await generateUniqueReferCode(6);
+
+    let usedReferCode = "";
+    if (refercode) {
+      usedReferCode = refercode;
+    }
+    // walletNumber
+    const hash = crypto.createHash("sha256").update(email).digest("hex");
+    const walletNumber = hash.substring(0, 32);
+
+    // Insert the user
     const [data] = await db.query(
-      `INSERT INTO users ( name, email, password, refercode, signupmethod ) VALUES (?, ?, ?, ?, ?)`,
-      [name, email, hashedPassword, refercode, signupmethod]
+      `INSERT INTO users (name, email, password, walletNumber, own_refercode, refercode, signupmethod) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        name,
+        email,
+        hashedPassword,
+        walletNumber,
+        ownReferCode,
+        usedReferCode,
+        signupmethod,
+      ]
     );
 
-    if (!data) {
-      return res.status(404).send({
+    if (!data || !data.insertId) {
+      return res.status(500).send({
         success: false,
-        message: "Error in INSERT QUERY",
+        message: "Error in creating user",
       });
     }
 
-    const w3coin = 0;
+    // Fetch new user bonus
+    const [newUserBonus] = await db.query(
+      `SELECT * FROM new_user_bonus WHERE name='new_user_bonus'`
+    );
+    const w3coin = newUserBonus[0]?.bonus || 0;
+
+    // Insert bonus into the wallet
     const [w3coinData] = await db.query(
-      `INSERT INTO wallate ( w3coin, user_id ) VALUES ( ?, ? )`,
+      `INSERT INTO wallate (w3coin, user_id) VALUES (?, ?)`,
       [w3coin, data.insertId]
     );
 
     if (!w3coinData) {
-      return res.status(404).send({
+      return res.status(500).send({
         success: false,
-        message: "Error in INSERT QUERY",
+        message: "Error in creating wallet",
       });
     }
 
+    // If refercode is provided, add 5 W3Coins to the referrer's wallet
+    if (refercode) {
+      const [referrer] = await db.query(
+        `SELECT id FROM users WHERE own_refercode = ?`,
+        [refercode]
+      );
+      if (referrer.length > 0) {
+        const referrerId = referrer[0].id;
+
+        const [reffalBonus] = await db.query(
+          `SELECT * FROM new_user_bonus WHERE name='referral_bonus'`
+        );
+
+        const referW3coin = reffalBonus[0]?.bonus || 0;
+
+        await db.query(
+          `UPDATE wallate SET w3coin = w3coin + ? WHERE user_id = ?`,
+          [referW3coin, referrerId]
+        );
+      }
+    }
+
+    // Fetch and return the new user's information
     const [results] = await db.query(`SELECT * FROM users WHERE id=?`, [
       data.insertId,
     ]);
-    const users = results[0];
-    const token = generateUsersToken(users);
+    const user = results[0];
 
+    // Generate JWT token
+    const token = generateUsersToken(user);
+
+    // Return success message along with the user data
     res.status(200).send({
       success: true,
       message: "User created successfully",
       data: {
-        user: users,
+        user,
         token,
       },
     });
   } catch (error) {
+    // Handle server error
     res.status(500).send({
       success: false,
       message: "Error in Create User API",

@@ -3,6 +3,10 @@ const {
   getTotalCoins,
   getCoinRate,
   updateCoinRate,
+  newUserBonusGet,
+  newUserBonusUpdate,
+  getReferralBonus,
+  updateReferralBonus,
 } = require("../controllers/dashboardController");
 
 const router = express.Router();
@@ -10,9 +14,11 @@ const router = express.Router();
 router.get("/total-coins", getTotalCoins);
 router.get("/coin-price", getCoinRate);
 router.put("/coin-price", updateCoinRate);
-// router.get("/my-wallet", verifyUsers, getMyWallet);
-// router.get("/today-mining", verifyUsers, getTodayMining);
-// router.put("/mining", verifyUsers, miningWallet);
-// router.delete("/delete/:id", verifyUsers, deleteWallet);
+
+router.get("/new-user-bonus", newUserBonusGet);
+router.put("/new-user-bonus", newUserBonusUpdate);
+
+router.get("/reffal-bonus", getReferralBonus);
+router.put("/reffal-bonus", updateReferralBonus);
 
 module.exports = router;

@@ -29,6 +29,48 @@ exports.getAllwallet = async (req, res) => {
   }
 };
 
+// get all mining history
+exports.getAllMiningHistory = async (req, res) => {
+  try {
+    const { startDate, endDate, date } = req.query;
+
+    let query = "SELECT * FROM today_mining";
+    let params = [];
+
+    if (startDate && endDate) {
+      // If startDate and endDate are provided
+      query += " WHERE date BETWEEN ? AND ?";
+      params.push(startDate, endDate);
+    } else if (date) {
+      // If only date is provided
+      query += " WHERE date = ?";
+      params.push(date);
+    }
+
+    const [data] = await db.query(query, params);
+
+    if (!data || data.length === 0) {
+      return res.status(400).send({
+        success: false,
+        message: "No mining history found",
+        data: data,
+      });
+    }
+
+    res.status(200).send({
+      success: true,
+      message: "Get mining history successfully",
+      data: data,
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: "Error in getting mining history",
+      error: error.message,
+    });
+  }
+};
+
 // get My Wallet
 exports.getMyWallet = async (req, res) => {
   try {

@@ -5,12 +5,14 @@ const {
   miningWallet,
   getMyWallet,
   getTodayMining,
+  getAllMiningHistory,
 } = require("../controllers/walletController");
 const verifyUsers = require("../middleware/verifyUsers");
 
 const router = express.Router();
 
 router.get("/all", getAllwallet);
+router.get("/mining-history", getAllMiningHistory);
 router.get("/my-wallet", verifyUsers, getMyWallet);
 router.get("/today-mining", verifyUsers, getTodayMining);
 router.put("/mining", verifyUsers, miningWallet);
