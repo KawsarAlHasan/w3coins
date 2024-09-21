@@ -3,15 +3,22 @@ const db = require("../config/db");
 // get all wallet
 exports.getAllwallet = async (req, res) => {
   try {
+    // Query parameters for pagination (default values if not provided)
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // SQL query with LIMIT and OFFSET for pagination
     const [data] = await db.query(
-      "SELECT w.id, w.user_id, u.name, u.email, u.account_status, u.kyc_status, w.w3coin FROM wallate w INNER JOIN users u ON w.user_id = u.id"
+      "SELECT w.id, w.user_id, u.name, u.email, u.account_status, u.kyc_status, w.w3coin FROM wallate w INNER JOIN users u ON w.user_id = u.id LIMIT ? OFFSET ?",
+      [limit, offset]
     );
 
     if (!data || data.length === 0) {
       return res.status(200).send({
         success: true,
         message: "No All wallet found",
-        data: data[0],
+        data: [],
       });
     }
 
@@ -19,6 +26,9 @@ exports.getAllwallet = async (req, res) => {
       success: true,
       message: "All wallet",
       data: data,
+      currentPage: page,
+      totalRecords: data.length,
+      limit: limit,
     });
   } catch (error) {
     res.status(500).send({
