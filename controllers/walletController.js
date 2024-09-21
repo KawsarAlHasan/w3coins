@@ -14,21 +14,31 @@ exports.getAllwallet = async (req, res) => {
       [limit, offset]
     );
 
+    // Query to count the total number of wallets (without pagination)
+    const [countResult] = await db.query(
+      "SELECT COUNT(*) as totalWallets FROM wallate"
+    );
+    const totalWallets = countResult[0].totalWallets;
+
     if (!data || data.length === 0) {
       return res.status(200).send({
         success: true,
         message: "No All wallet found",
         data: [],
+        totalWallets: 0, // Include totalWallets in the response even if no data is found
+        currentPage: page,
+        totalPages: 0,
       });
     }
 
     res.status(200).send({
       success: true,
       message: "All wallet",
-      data: data,
       currentPage: page,
-      totalRecords: data.length,
+      totalWallets: totalWallets, // Now using the actual total count
+      totalPages: Math.ceil(totalWallets / limit), // Calculate total pages
       limit: limit,
+      data: data,
     });
   } catch (error) {
     res.status(500).send({
