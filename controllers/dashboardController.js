@@ -240,6 +240,7 @@ exports.getMyReferralList = async (req, res) => {
     res.status(500).send({
       success: false,
       message: "Error in server for getting referral list",
+      error: error.message,
     });
   }
 };

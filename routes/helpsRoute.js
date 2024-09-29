@@ -1,10 +1,14 @@
 const express = require("express");
 
 const verifyUsers = require("../middleware/verifyUsers");
-const { createHelpsRequist } = require("../controllers/helpsController");
+const {
+  createHelpsRequist,
+  getMyHelpsList,
+} = require("../controllers/helpsController");
 
 const router = express.Router();
 
-router.post("/create", createHelpsRequist);
+router.post("/create", verifyUsers, createHelpsRequist);
+router.get("/my", verifyUsers, getMyHelpsList);
 
 module.exports = router;
