@@ -221,6 +221,7 @@ exports.updateReferralBonus = async (req, res) => {
   }
 };
 
+// get my referral list
 exports.getMyReferralList = async (req, res) => {
   try {
     const ownRefercode = req.decodedUser.own_refercode;
