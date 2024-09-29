@@ -7,7 +7,9 @@ const {
   newUserBonusUpdate,
   getReferralBonus,
   updateReferralBonus,
+  getMyReferralList,
 } = require("../controllers/dashboardController");
+const verifyUsers = require("../middleware/verifyUsers");
 
 const router = express.Router();
 
@@ -20,5 +22,7 @@ router.put("/new-user-bonus", newUserBonusUpdate);
 
 router.get("/reffal-bonus", getReferralBonus);
 router.put("/reffal-bonus", updateReferralBonus);
+
+router.get("/reffal", verifyUsers, getMyReferralList);
 
 module.exports = router;

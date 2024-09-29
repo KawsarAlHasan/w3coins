@@ -220,3 +220,25 @@ exports.updateReferralBonus = async (req, res) => {
     });
   }
 };
+
+exports.getMyReferralList = async (req, res) => {
+  try {
+    const ownRefercode = req.decodedUser.own_refercode;
+
+    const [userData] = await db.query(`SELECT * FROM users WHERE refercode=?`, [
+      ownRefercode,
+    ]);
+
+    res.status(200).send({
+      success: true,
+      message: "Get my referral list successfully",
+      totalReferrel: userData.length,
+      data: userData,
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: "Error in server for getting referral list",
+    });
+  }
+};
